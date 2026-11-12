@@ -6,8 +6,10 @@ import {
   classify,
   initialMood,
   isRainbow,
+  pause,
   react,
   restart,
+  resume,
   scoreAt,
   setSinking,
   setTuning,
@@ -125,5 +127,36 @@ describe("rainbow", () => {
     assert.equal(isRainbow(scoreAt(mood, T0)), true);
     const leaveAfter = (LIMIT - rainbowAt) / sinkPerSec;
     assert.equal(isRainbow(scoreAt(mood, seconds(leaveAfter + 0.1))), false);
+  });
+});
+
+describe("停止", () => {
+  test("停止しているあいだはテンションが動かない", () => {
+    const sinking = pause(atScore(40, true), seconds(10));
+    assert.equal(sinking.score, 40 - sinkPerSec * 10);
+    assert.equal(scoreAt(sinking, seconds(600)), sinking.score);
+
+    const decaying = pause(atScore(40), T0);
+    assert.equal(scoreAt(decaying, seconds(600)), 40);
+  });
+
+  test("停止しているあいだはリアクションを数えない", () => {
+    const paused = pause(atScore(10), T0);
+    assert.equal(press(paused, "👍", 3, seconds(1)), paused);
+    assert.equal(press(paused, "👎", 3, seconds(1)), paused);
+  });
+
+  test("停止しているあいだは通話の出入りで 0 に戻さず、下がるかどうかだけ覚える", () => {
+    const paused = pause(atScore(30), T0);
+    const joined = restart(paused, true, seconds(5));
+    assert.equal(joined.score, 30);
+    assert.equal(joined.sinking, true);
+  });
+
+  test("再開すると止めた値から続きが動く", () => {
+    const resumed = resume(restart(pause(atScore(30), T0), true, seconds(5)), seconds(100));
+    assert.equal(resumed.paused, false);
+    assert.equal(scoreAt(resumed, seconds(100)), 30);
+    assert.equal(scoreAt(resumed, seconds(110)), 30 - sinkPerSec * 10);
   });
 });
