@@ -47,10 +47,23 @@ pnpm build
 | コマンド | 内容 |
 |---|---|
 | `pnpm dev` | ファイルを保存するたびに `dist` を作り直す |
+| `pnpm play` | 演出だけを試すページを `http://localhost:8000` で開く |
 | `pnpm build` | `dist` を作る |
 | `pnpm typecheck` | 型チェック |
 
 コードを変えたら、`chrome://extensions` で拡張を再読み込みし、演出を出すタブも再読み込みしてください。
+
+## 演出だけを試す
+
+`pnpm play` を実行して `http://localhost:8000` を開くと、拡張を読み込まなくても演出を試せます。
+上半分がダミーのスライドで、下のボタンを押すと拡張と同じ処理で演出が出ます。
+`src/` のファイルを保存すると自動で再読み込みされます。
+
+- `1`〜`7` キーでリアクション、`f` でフィーバー、`r` でリセット
+- 背景は スライド / 白 / 黒 / カラフル から選べる
+- テーマ、メーター、背景の選択はブラウザに残る
+
+ポート番号は `PORT=8001 pnpm play` のように変えられます。
 
 ## 動作確認
 
@@ -67,7 +80,9 @@ pnpm build
 | `src/meter.ts` | 画面右下のメモリ |
 | `src/fx.ts` | テーマから使う描画の部品 |
 | `src/themes/` | テーマごとの演出 |
-| `src/overlay.ts` | Meet 以外のタブに演出を重ねる |
+| `src/stage.ts` | 画面に演出を重ねる層を作り、テンションや設定の変化を演出に反映する |
+| `src/overlay.ts` | Meet 以外のタブで、`chrome.storage` の変化を `stage` に渡す |
+| `src/play/`, `play/` | 演出を試すページ（`pnpm play`） |
 | `src/popup.ts` | ポップアップ |
 | `public/` | `manifest.json` やポップアップの HTML など、そのまま `dist` に写すファイル |
 
