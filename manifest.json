@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Dopagaki Meet",
+  "description": "Google Meet のリアクションに合わせて、発表中の画面を明るくしたり暗くしたりします。",
+  "version": "0.1.0",
+  "minimum_chrome_version": "114",
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "Dopagaki Meet",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["mood.js", "meet.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "exclude_matches": ["https://meet.google.com/*"],
+      "js": ["mood.js", "overlay.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Dopagaki Meet</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Dopagaki Meet</h1>
+      <label class="toggle">
+        <input type="checkbox" id="enabled" />
+        <span>演出を出す</span>
+      </label>
+    </header>
+
+    <section>
+      <div class="meter"><div id="needle"></div></div>
+      <p id="status"></p>
+    </section>
+
+    <section class="buttons">
+      <button data-kind="good">👍 いいね</button>
+      <button data-kind="bad">👎 バッド</button>
+      <button id="rainbow">🌈 レインボー</button>
+      <button id="reset">リセット</button>
+    </section>
+
+    <p class="hint">
+      ボタンは動作確認用です。開いているほかのタブに演出が出ます。
+    </p>
+
+    <script src="mood.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

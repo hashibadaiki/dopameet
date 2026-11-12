@@ -1,0 +1,71 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+}
+
+body {
+  width: 260px;
+  margin: 0;
+  padding: 14px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+h1 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meter {
+  position: relative;
+  height: 10px;
+  margin-top: 14px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #000, #888 50%, #ffc43c);
+}
+
+#needle {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 4px;
+  height: 16px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: canvastext;
+  outline: 1px solid canvas;
+  transition: left 0.25s linear;
+}
+
+#status {
+  margin: 8px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+button {
+  padding: 6px 4px;
+  font: inherit;
+}
+
+.hint {
+  margin: 12px 0 0;
+  opacity: 0.7;
+}
