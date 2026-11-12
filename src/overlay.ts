@@ -8,4 +8,7 @@ const start = () => {
   moodStore.subscribe(stage.setMood);
 };
 
-if (window.top === window) start();
+if (window.top === window && !globalThis.dopameetAttached) {
+  globalThis.dopameetAttached = true;
+  start();
+}

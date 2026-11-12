@@ -4,7 +4,7 @@
   "description": "Google Meet のリアクションに合わせて、発表中の画面を盛り上げたり暗くしたりします。",
   "version": "0.2.0",
   "minimum_chrome_version": "114",
-  "permissions": ["storage"],
+  "permissions": ["storage", "activeTab", "scripting"],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -23,12 +23,6 @@
     {
       "matches": ["https://meet.google.com/*"],
       "js": ["meet.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "exclude_matches": ["https://meet.google.com/*"],
-      "js": ["overlay.js"],
       "run_at": "document_idle"
     }
   ]

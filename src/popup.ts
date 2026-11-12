@@ -26,6 +26,8 @@ const byId = <T extends HTMLElement>(id: string, type: new () => T) => {
 };
 
 const power = byId("power", HTMLButtonElement);
+const attach = byId("attach", HTMLButtonElement);
+const attachNote = byId("attach-note", HTMLParagraphElement);
 const meter = byId("meter", HTMLSelectElement);
 const callNote = byId("call", HTMLParagraphElement);
 const needle = byId("needle", HTMLDivElement);
@@ -60,7 +62,7 @@ const render = () => {
 settingsStore.subscribe((settings) => {
   power.textContent = settings.enabled ? "停止" : "再開";
   power.classList.toggle("stopped", !settings.enabled);
-  for (const button of document.querySelectorAll<HTMLButtonElement>("section button")) {
+  for (const button of document.querySelectorAll<HTMLButtonElement>(".test button")) {
     button.disabled = !settings.enabled;
   }
   meter.value = settings.meter;
@@ -97,3 +99,50 @@ meter.addEventListener("change", () =>
 byId("reset", HTMLButtonElement).addEventListener("click", () =>
   moodStore.update((current) => restart(current, current.sinking, Date.now())),
 );
+
+const activeTabId = async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || tab.url?.startsWith("https://meet.google.com/")) return null;
+  return tab.id;
+};
+
+const isAttached = async (tabId: number) => {
+  const [injection] = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => globalThis.dopameetAttached === true,
+  });
+  return injection?.result === true;
+};
+
+const showAttach = (state: "ready" | "attached" | "unavailable") => {
+  attach.disabled = state !== "ready";
+  attach.textContent = state === "attached" ? "このタブに演出を出しています" : "このタブに演出を出す";
+  attachNote.textContent = {
+    ready: "Meet で共有するタブで押してください。",
+    attached: "別のページに移ったり再読み込みしたりすると消えます。",
+    unavailable: "このページには演出を出せません。Meet で共有するタブで開いてください。",
+  }[state];
+};
+
+const refreshAttach = async () => {
+  try {
+    const tabId = await activeTabId();
+    if (tabId === null) return showAttach("unavailable");
+    showAttach((await isAttached(tabId)) ? "attached" : "ready");
+  } catch {
+    showAttach("unavailable");
+  }
+};
+
+attach.addEventListener("click", async () => {
+  try {
+    const tabId = await activeTabId();
+    if (tabId === null) return showAttach("unavailable");
+    await chrome.scripting.executeScript({ target: { tabId }, files: ["overlay.js"] });
+  } catch (error) {
+    console.warn("[dopameet]", error);
+  }
+  await refreshAttach();
+});
+
+void refreshAttach();
