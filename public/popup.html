@@ -12,6 +12,12 @@
     </header>
 
     <section>
+      <h2>このタブ</h2>
+      <button type="button" id="attach">このタブに演出を出す</button>
+      <p class="note" id="attach-note"></p>
+    </section>
+
+    <section>
       <h2>メモリ</h2>
       <select id="meter">
         <option value="call">Meet の通話中だけ表示</option>
@@ -27,13 +33,13 @@
       <p class="note" id="status"></p>
     </section>
 
-    <section>
+    <section class="test">
       <h2>テスト</h2>
       <div class="reactions" id="reactions"></div>
       <div class="actions">
         <button id="reset">リセット</button>
       </div>
-      <p class="note">ほかのタブに演出が出ます。</p>
+      <p class="note">「このタブに演出を出す」を押したタブに演出が出ます。</p>
     </section>
 
     <script src="popup.js"></script>
