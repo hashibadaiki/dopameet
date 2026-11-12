@@ -58,6 +58,10 @@ pnpm build
 | `pnpm build` | `dist` を作る |
 | `pnpm typecheck` | 型チェック |
 | `pnpm test` | テンション計算のテスト（`test/`） |
+| `pnpm zip` | Chrome Web Store に提出する ZIP を作る |
+| `pnpm store:images` | ストア用のスクリーンショットとプロモーション タイルを作る |
+
+Chrome Web Store への提出手順と掲載文は [`store/README.md`](store/README.md) にまとめています。
 
 コードを変えたら、`chrome://extensions` で拡張を再読み込みし、演出を出すタブも再読み込みしてください。
 
@@ -93,7 +97,8 @@ pnpm build
 | `src/themes/normal.ts` | 演出の中身（煙の色の段階、暗転、END） |
 | `src/stage.ts` | 画面に演出を重ねる層を作り、テンションや設定の変化を演出に反映する |
 | `src/overlay.ts` | Meet 以外のタブで、`chrome.storage` の変化を `stage` に渡す |
-| `src/play/`, `play/` | 演出を試すページ（`pnpm play`） |
+| `src/play/`, `play/` | 演出を試すページ（`pnpm play`）と、ストア用スクリーンショットの撮影ページ |
+| `store/` | Chrome Web Store の掲載文、プロモーション タイルの元データ、提出用画像 |
 | `src/popup.ts` | ポップアップ |
 | `public/` | `manifest.json` やポップアップの HTML など、そのまま `dist` に写すファイル |
 | `assets/` | アイコンとヒーロー画像の元データ（`icon.svg`、`hero.html`）と、README に載せる画像 |

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&display=swap">
+<style>
+body { margin: 0; }
+.tile { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; background: #FFE9EE; color: #16112B; font-family: "Unbounded", sans-serif; font-weight: 800; line-height: 1.12; letter-spacing: -0.02em; white-space: nowrap; }
+.sticker { display: inline-block; padding: 0 0.14em; border-radius: 0.18em; background: #E8202A; color: #FFFFFF; box-shadow: 0.05em 0.05em 0 #16112B; }
+.small { width: 440px; height: 280px; padding: 0 36px; gap: 8px; font-size: 40px; }
+.marquee { width: 1400px; height: 560px; padding: 0 120px; gap: 18px; font-size: 112px; }
+</style>
+</head>
+<body>
+<div class="tile" id="tile">
+<div><span class="sticker" style="transform: rotate(-3deg)">Dopa</span>gaki</div>
+<div>Google <span class="sticker" style="transform: rotate(2deg)">meet</span>s</div>
+</div>
+<script>
+document.getElementById("tile").classList.add(new URLSearchParams(location.search).get("size") ?? "small");
+</script>
+</body>
+</html>

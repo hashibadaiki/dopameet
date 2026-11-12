@@ -8,7 +8,9 @@
     "dev": "node scripts/build.ts --watch",
     "play": "node scripts/play.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts && tsc --noEmit -p test",
-    "test": "node --test test/*.test.ts"
+    "test": "node --test test/*.test.ts",
+    "zip": "node scripts/build.ts && node scripts/zip.ts",
+    "store:images": "node scripts/store.ts"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.7",
