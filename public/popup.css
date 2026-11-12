@@ -36,10 +36,18 @@ section {
   margin-top: 14px;
 }
 
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+#power {
+  min-width: 64px;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #e8202a;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+#power.stopped {
+  background: var(--accent);
 }
 
 select {

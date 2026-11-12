@@ -32,6 +32,7 @@ export interface Mood {
   score: number;
   at: number;
   sinking: boolean;
+  paused: boolean;
   events: ReactionEvent[];
   seq: number;
 }
@@ -60,6 +61,7 @@ export const classify = (text: string): ReactionKind | null => {
 const clamp = (value: number) => Math.max(-LIMIT, Math.min(LIMIT, value));
 
 export const scoreAt = (mood: Mood, now: number) => {
+  if (mood.paused) return mood.score;
   const elapsed = Math.max(0, now - mood.at);
   if (mood.sinking) return clamp(mood.score - (tuning.sinkPerSec * elapsed) / 1000);
   return mood.score * 0.5 ** (elapsed / tuning.halfLifeMs);
@@ -71,16 +73,21 @@ export const initialMood = (): Mood => ({
   score: 0,
   at: 0,
   sinking: false,
+  paused: false,
   events: [],
   seq: 0,
 });
 
-export const restart = (mood: Mood, sinking: boolean, now: number): Mood => ({
-  ...initialMood(),
-  seq: mood.seq,
-  at: now,
-  sinking,
-});
+export const restart = (mood: Mood, sinking: boolean, now: number): Mood =>
+  mood.paused
+    ? { ...mood, sinking }
+    : { ...initialMood(), seq: mood.seq, at: now, sinking };
+
+export const pause = (mood: Mood, now: number): Mood =>
+  mood.paused ? mood : { ...mood, score: scoreAt(mood, now), at: now, paused: true };
+
+export const resume = (mood: Mood, now: number): Mood =>
+  mood.paused ? { ...mood, at: now, paused: false } : mood;
 
 export const setSinking = (mood: Mood, sinking: boolean, now: number): Mood => ({
   ...mood,
@@ -95,6 +102,7 @@ export const react = (
   kind: ReactionKind,
   now: number,
 ): Mood => {
+  if (mood.paused) return mood;
   const seq = mood.seq + 1;
   const events = [...mood.events, { id: seq, emoji, kind, at: now }].slice(
     -MAX_EVENTS,

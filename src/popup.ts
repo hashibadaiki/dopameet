@@ -6,8 +6,10 @@ import {
   initialMood,
   isRainbow,
   moodStore,
+  pause,
   react,
   restart,
+  resume,
   scoreAt,
   settingsStore,
   type Call,
@@ -23,7 +25,7 @@ const byId = <T extends HTMLElement>(id: string, type: new () => T) => {
   return element;
 };
 
-const enabled = byId("enabled", HTMLInputElement);
+const power = byId("power", HTMLButtonElement);
 const meter = byId("meter", HTMLSelectElement);
 const callNote = byId("call", HTMLParagraphElement);
 const needle = byId("needle", HTMLDivElement);
@@ -56,7 +58,11 @@ const render = () => {
 };
 
 settingsStore.subscribe((settings) => {
-  enabled.checked = settings.enabled;
+  power.textContent = settings.enabled ? "停止" : "再開";
+  power.classList.toggle("stopped", !settings.enabled);
+  for (const button of document.querySelectorAll<HTMLButtonElement>("section button")) {
+    button.disabled = !settings.enabled;
+  }
   meter.value = settings.meter;
 });
 
@@ -72,9 +78,17 @@ callStore.subscribe((next) => {
 
 setInterval(render, 250);
 
-enabled.addEventListener("change", () =>
-  settingsStore.update((current) => ({ ...current, enabled: enabled.checked })),
-);
+power.addEventListener("click", async () => {
+  const { enabled } = await settingsStore.read();
+  const now = Date.now();
+  if (enabled) {
+    await moodStore.update((current) => pause(current, now));
+    await settingsStore.update((current) => ({ ...current, enabled: false }));
+  } else {
+    await settingsStore.update((current) => ({ ...current, enabled: true }));
+    await moodStore.update((current) => resume(current, now));
+  }
+});
 
 meter.addEventListener("change", () =>
   settingsStore.update((current) => ({ ...current, meter: meter.value as MeterMode })),
