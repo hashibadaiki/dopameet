@@ -1,5 +1,4 @@
-const MeetMood = (() => {
-  const STORAGE_KEY = "mood";
+const Dopameet = (() => {
   const LIMIT = 100;
   const HALF_LIFE_MS = 45_000;
   const GOOD_STEP = 8;
@@ -7,16 +6,10 @@ const MeetMood = (() => {
   const RAINBOW_COUNT = 6;
   const RAINBOW_WINDOW_MS = 10_000;
   const RAINBOW_MS = 10_000;
+  const CALL_TTL_MS = 150_000;
+  const MAX_EVENTS = 12;
   const GOOD = new Set(["💖", "❤", "👍", "🎉", "👏", "😂", "😮"]);
   const BAD = new Set(["👎"]);
-
-  const initialState = () => ({
-    score: 0,
-    at: 0,
-    rainbowUntil: 0,
-    goodTimes: [],
-    enabled: true,
-  });
 
   const normalize = (text) =>
     text.replace(/[️\u{1F3FB}-\u{1F3FF}]/gu, "").trim();
@@ -28,63 +21,98 @@ const MeetMood = (() => {
     return null;
   };
 
-  const scoreAt = (state, now) =>
-    state.score * 0.5 ** (Math.max(0, now - state.at) / HALF_LIFE_MS);
-
   const clamp = (value) => Math.max(-LIMIT, Math.min(LIMIT, value));
 
-  const react = (state, kind, now) => {
-    const current = scoreAt(state, now);
+  const scoreAt = (mood, now) =>
+    mood.score * 0.5 ** (Math.max(0, now - mood.at) / HALF_LIFE_MS);
+
+  const recentGood = (mood, now) =>
+    mood.goodTimes.filter((time) => now - time < RAINBOW_WINDOW_MS);
+
+  const initialMood = () => ({
+    score: 0,
+    at: 0,
+    rainbowUntil: 0,
+    goodTimes: [],
+    events: [],
+    seq: 0,
+  });
+
+  const react = (mood, emoji, kind, now) => {
+    const seq = mood.seq + 1;
+    const events = [...mood.events, { id: seq, emoji, kind, at: now }].slice(
+      -MAX_EVENTS,
+    );
+    const current = scoreAt(mood, now);
     if (kind === "bad") {
-      return { ...state, score: clamp(current - BAD_STEP), at: now };
+      return { ...mood, score: clamp(current - BAD_STEP), at: now, seq, events };
     }
-    const goodTimes = [
-      ...state.goodTimes.filter((time) => now - time < RAINBOW_WINDOW_MS),
-      now,
-    ];
+    const goodTimes = [...recentGood(mood, now), now];
     const burst = goodTimes.length >= RAINBOW_COUNT;
     return {
-      ...state,
+      ...mood,
       score: clamp(current + GOOD_STEP),
       at: now,
+      seq,
+      events,
       goodTimes: burst ? [] : goodTimes,
-      rainbowUntil: burst ? now + RAINBOW_MS : state.rainbowUntil,
+      rainbowUntil: burst ? now + RAINBOW_MS : mood.rainbowUntil,
     };
   };
 
-  const load = async () => {
-    const stored = await chrome.storage.local.get(STORAGE_KEY);
-    return { ...initialState(), ...stored[STORAGE_KEY] };
+  const store = (key, initial) => {
+    const read = async () => {
+      const stored = await chrome.storage.local.get(key);
+      return { ...initial(), ...stored[key] };
+    };
+
+    let queue = Promise.resolve();
+    const update = (change) => {
+      queue = queue
+        .then(async () =>
+          chrome.storage.local.set({ [key]: change(await read()) }),
+        )
+        .catch((error) => console.warn("[dopameet]", error));
+      return queue;
+    };
+
+    const subscribe = (listener) => {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === "local" && changes[key]) {
+          listener({ ...initial(), ...changes[key].newValue });
+        }
+      });
+      read().then(listener);
+    };
+
+    return { read, update, subscribe };
   };
 
-  const save = (state) => chrome.storage.local.set({ [STORAGE_KEY]: state });
+  const defaultSettings = () => ({
+    enabled: true,
+    theme: "simple",
+    meter: "call",
+  });
 
-  let queue = Promise.resolve();
-  const update = (change) => {
-    queue = queue
-      .then(async () => save(change(await load())))
-      .catch((error) => console.warn("[dopagaki-meet]", error));
-    return queue;
-  };
-
-  const subscribe = (listener) => {
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === "local" && changes[STORAGE_KEY]) {
-        listener({ ...initialState(), ...changes[STORAGE_KEY].newValue });
-      }
-    });
-    load().then(listener);
-  };
+  const themes = new Map();
+  const defineTheme = (theme) => themes.set(theme.id, theme);
 
   return {
     LIMIT,
+    RAINBOW_COUNT,
     RAINBOW_MS,
-    initialState,
+    CALL_TTL_MS,
     normalize,
     classify,
     scoreAt,
+    recentGood,
+    initialMood,
     react,
-    update,
-    subscribe,
+    defaultSettings,
+    mood: store("mood", initialMood),
+    settings: store("settings", defaultSettings),
+    call: store("call", () => ({ at: 0 })),
+    themes,
+    defineTheme,
   };
 })();

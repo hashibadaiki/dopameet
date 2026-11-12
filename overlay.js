@@ -1,31 +1,8 @@
 (() => {
   if (window.top !== window) return;
 
-  const TICK_MS = 250;
-  const IDLE_THRESHOLD = 0.01;
-
-  const sheet = new CSSStyleSheet();
-  sheet.replaceSync(`
-    div {
-      position: absolute;
-      inset: 0;
-      transition: opacity 0.6s linear, backdrop-filter 0.6s linear, box-shadow 0.6s linear;
-    }
-    .dark { background: #000; opacity: 0; }
-    .rainbow {
-      opacity: 0;
-      background: linear-gradient(
-        120deg,
-        #ff3b3b, #ff9f1a, #ffe600, #3ddc5a, #1ad1ff, #5b6cff, #c850ff, #ff3b3b
-      );
-      background-size: 300% 300%;
-      animation: slide 3s linear infinite;
-    }
-    @keyframes slide {
-      from { background-position: 0% 50%; }
-      to { background-position: 150% 50%; }
-    }
-  `);
+  const SYNC_MS = 15_000;
+  const FRESH_MS = 4_000;
 
   const host = document.createElement("div");
   host.popover = "manual";
@@ -47,64 +24,83 @@
     .join("; ");
 
   const root = host.attachShadow({ mode: "closed" });
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(DopameetEngine.css);
   root.adoptedStyleSheets = [sheet];
-  const layer = (name) => {
-    const element = document.createElement("div");
-    element.className = name;
-    root.append(element);
-    return element;
-  };
-  const tint = layer("tint");
-  const dark = layer("dark");
-  const rainbow = layer("rainbow");
+  const engine = new DopameetEngine(root);
 
-  let state = MeetMood.initialState();
-  let timer = null;
+  let settings = Dopameet.defaultSettings();
+  let call = { at: 0 };
+  let seen = null;
+  let rainbowUntil = null;
+
+  const isOpen = () => host.isConnected && host.matches(":popover-open");
 
   const show = () => {
     if (!host.isConnected) document.documentElement.append(host);
-    if (!host.matches(":popover-open")) host.showPopover();
+    if (!isOpen()) host.showPopover();
   };
 
   const hide = () => {
-    if (host.isConnected && host.matches(":popover-open")) host.hidePopover();
+    if (isOpen()) host.hidePopover();
   };
 
-  const stop = () => {
-    clearInterval(timer);
-    timer = null;
-  };
+  const meterWanted = () =>
+    settings.meter === "always" ||
+    (settings.meter === "call" && Date.now() - call.at < Dopameet.CALL_TTL_MS);
 
-  const render = () => {
-    const now = Date.now();
-    const level = state.enabled
-      ? MeetMood.scoreAt(state, now) / MeetMood.LIMIT
-      : 0;
-    const isRainbow = state.enabled && now < state.rainbowUntil;
-
-    if (!isRainbow && Math.abs(level) < IDLE_THRESHOLD) {
+  const sync = () => {
+    if (!settings.enabled) {
+      engine.stop();
+      engine.meter.setVisible(false);
       hide();
-      stop();
       return;
     }
-
-    const up = Math.max(0, level);
-    const down = Math.max(0, -level);
-    tint.style.backdropFilter = `saturate(${1 + up * 0.9 - down}) brightness(${1 + up * 0.15})`;
-    tint.style.boxShadow = `inset 0 0 ${up * 240}px rgba(255, 196, 60, ${up * 0.7})`;
-    dark.style.opacity = down;
-    rainbow.style.opacity = isRainbow ? 0.4 : 0;
-    show();
-    if (!timer) timer = setInterval(render, TICK_MS);
+    const meter = meterWanted();
+    engine.meter.setVisible(meter);
+    if (meter || engine.running) show();
+    else hide();
   };
+
+  engine.onSleep = sync;
+
+  Dopameet.settings.subscribe((next) => {
+    settings = next;
+    const theme =
+      Dopameet.themes.get(next.theme) ?? Dopameet.themes.get("simple");
+    engine.setTheme(theme);
+    sync();
+  });
+
+  Dopameet.call.subscribe((next) => {
+    call = next;
+    sync();
+  });
+
+  Dopameet.mood.subscribe((next) => {
+    const now = Date.now();
+    const fresh =
+      seen === null
+        ? []
+        : next.events.filter((event) => event.id > seen && now - event.at < FRESH_MS);
+    const feverStarted =
+      rainbowUntil !== null &&
+      next.rainbowUntil !== rainbowUntil &&
+      next.rainbowUntil > now;
+    seen = next.seq;
+    rainbowUntil = next.rainbowUntil;
+    engine.setMood(next);
+    if (!settings.enabled) return;
+    engine.wake();
+    sync();
+    for (const event of fresh) engine.reaction(event);
+    if (feverStarted) engine.rainbowStart();
+  });
 
   document.addEventListener("fullscreenchange", () => {
     hide();
-    render();
+    sync();
   });
 
-  MeetMood.subscribe((next) => {
-    state = next;
-    render();
-  });
+  setInterval(sync, SYNC_MS);
 })();
