@@ -1,4 +1,4 @@
-import { EMOJI_FONT, banner, clamp01, rand, rgba, vignette } from "./fx";
+import { banner, clamp01, rand, rgba, vignette } from "./fx";
 import { Meter } from "./meter";
 import {
   LIMIT,
@@ -150,22 +150,6 @@ export class Engine {
     this.wake();
     const view = this.step(0);
     this.meter.bump(event);
-    const origin = this.meter.origin();
-    if (origin) {
-      this.spawn({
-        kind: "emoji",
-        emoji: event.emoji,
-        x: origin.x,
-        y: origin.y,
-        vx: rand(-50, 50),
-        vy: -220,
-        drag: 1.4,
-        size: 36,
-        life: 1.2,
-        pop: true,
-        fadeOut: 0.5,
-      });
-    }
     this.state.onReaction?.(view, event);
   }
 
@@ -261,24 +245,6 @@ export class Engine {
     this.filterLayer.style.backdropFilter = value || "none";
   }
 
-  private sprite(emoji: string, size: number) {
-    const bucket = Math.max(8, Math.round(size / 8) * 8);
-    const key = `${emoji}|${bucket}`;
-    const cached = this.sprites.get(key);
-    if (cached) return cached;
-    const px = Math.ceil(bucket * 1.3 * this.dpr);
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = px;
-    const g = context2d(canvas);
-    g.font = `${Math.round(px * 0.76)}px ${EMOJI_FONT}`;
-    g.textAlign = "center";
-    g.textBaseline = "middle";
-    g.fillText(emoji, px / 2, px / 2 + px * 0.05);
-    if (this.sprites.size > 160) this.sprites.clear();
-    this.sprites.set(key, canvas);
-    return canvas;
-  }
-
   private glow(color: string) {
     const key = `glow|${color}`;
     const cached = this.sprites.get(key);
@@ -328,11 +294,7 @@ export class Engine {
     ctx.globalAlpha = alpha;
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rot);
-    if (p.kind === "emoji" && p.emoji) {
-      ctx.scale(pop * (p.sx ?? 1), pop * (p.sy ?? 1));
-      const s = p.size * 1.3;
-      ctx.drawImage(this.sprite(p.emoji, p.size), -s / 2, -s / 2, s, s);
-    } else if (p.kind === "confetti") {
+    if (p.kind === "confetti") {
       const w = p.w ?? 8;
       const h = p.h ?? 14;
       ctx.scale(1, Math.cos(p.age * (p.spin ?? 10)));

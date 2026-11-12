@@ -1,4 +1,4 @@
-import { banner, clamp01, edgePoint, rand, rise, smooth, vignette } from "../fx";
+import { banner, clamp01, edgePoint, rand, smooth, vignette } from "../fx";
 import type { Engine } from "../engine";
 import type { Particle, Theme, View } from "../types";
 
@@ -346,22 +346,9 @@ export const normal: Theme = {
 
       onReaction(v, event) {
         if (event.kind === "good") {
-          rise(engine, event.emoji);
           engine.flash(hex(color), 0.3, { edge: true, decay: 3 });
           return;
         }
-        engine.spawn({
-          kind: "emoji",
-          emoji: event.emoji,
-          x: rand(0.15, 0.85) * v.w,
-          y: -40,
-          vy: 130,
-          size: 64,
-          life: 2.4,
-          pop: true,
-          alpha: 0.85,
-          fadeOut: 1,
-        });
         engine.flash("#1a0010", 0.6, { edge: true, decay: 2.5 });
       },
 

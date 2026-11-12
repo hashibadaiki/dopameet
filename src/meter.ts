@@ -56,12 +56,6 @@ export class Meter {
     );
   }
 
-  origin() {
-    if (!this.visible) return null;
-    const rect = this.el.getBoundingClientRect();
-    return { x: rect.left + rect.width / 2, y: rect.top };
-  }
-
   private write<T extends string | boolean>(key: string, value: T, apply: (value: T) => void) {
     if (this.cache.get(key) === value) return;
     this.cache.set(key, value);

@@ -38,7 +38,7 @@ export interface Theme {
   create(engine: Engine): ThemeInstance;
 }
 
-export type ParticleKind = "emoji" | "confetti" | "spark" | "text" | "custom";
+export type ParticleKind = "confetti" | "spark" | "text" | "custom";
 
 export interface Particle {
   kind: ParticleKind;
@@ -60,9 +60,6 @@ export interface Particle {
   sway: number;
   wobble?: number;
   pop?: boolean;
-  sx?: number;
-  sy?: number;
-  emoji?: string;
   color?: string;
   w?: number;
   h?: number;
