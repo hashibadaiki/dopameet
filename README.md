@@ -1,5 +1,7 @@
 # Dopameet
 
+![Dopameet](assets/hero.png)
+
 Google Meet のリアクションに合わせて、発表中の画面を盛り上げたり暗くしたりする Chrome 拡張です。
 
 - 良いリアクション（💖👍🎉👏😂😮）が来ると、画面が明るく派手になります
@@ -87,6 +89,7 @@ pnpm build
 | `src/play/`, `play/` | 演出を試すページ（`pnpm play`） |
 | `src/popup.ts` | ポップアップ |
 | `public/` | `manifest.json` やポップアップの HTML など、そのまま `dist` に写すファイル |
+| `assets/` | アイコンとヒーロー画像の元データ（`icon.svg`、`hero.html`）と、README に載せる画像 |
 
 加点や減衰の速さ、フィーバーの条件は `src/mood.ts` の `DEFAULT_TUNING` で変えられます。
 `pnpm play` のスライダーで値を試してから、ここに書き写すと楽です。
