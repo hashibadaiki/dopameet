@@ -12,20 +12,13 @@
   "content_scripts": [
     {
       "matches": ["https://meet.google.com/*"],
-      "js": ["mood.js", "meet.js"],
+      "js": ["meet.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["http://*/*", "https://*/*"],
       "exclude_matches": ["https://meet.google.com/*"],
-      "js": [
-        "mood.js",
-        "engine.js",
-        "themes/simple.js",
-        "themes/party.js",
-        "themes/halloween.js",
-        "overlay.js"
-      ],
+      "js": ["overlay.js"],
       "run_at": "document_idle"
     }
   ]

@@ -1,9 +1,20 @@
-(() => {
-  if (window.top !== window) return;
+import { Engine } from "./engine";
+import {
+  CALL_TTL_MS,
+  callStore,
+  defaultSettings,
+  moodStore,
+  settingsStore,
+  type Call,
+  type Settings,
+} from "./mood";
+import css from "./overlay.css";
+import { findTheme } from "./themes";
 
-  const SYNC_MS = 15_000;
-  const FRESH_MS = 4_000;
+const SYNC_MS = 15_000;
+const FRESH_MS = 4_000;
 
+const start = () => {
   const host = document.createElement("div");
   host.popover = "manual";
   host.style.cssText = [
@@ -25,14 +36,14 @@
 
   const root = host.attachShadow({ mode: "closed" });
   const sheet = new CSSStyleSheet();
-  sheet.replaceSync(DopameetEngine.css);
+  sheet.replaceSync(css);
   root.adoptedStyleSheets = [sheet];
-  const engine = new DopameetEngine(root);
+  const engine = new Engine(root);
 
-  let settings = Dopameet.defaultSettings();
-  let call = { at: 0 };
-  let seen = null;
-  let rainbowUntil = null;
+  let settings: Settings = defaultSettings();
+  let call: Call = { at: 0 };
+  let seen: number | null = null;
+  let rainbowUntil: number | null = null;
 
   const isOpen = () => host.isConnected && host.matches(":popover-open");
 
@@ -47,7 +58,7 @@
 
   const meterWanted = () =>
     settings.meter === "always" ||
-    (settings.meter === "call" && Date.now() - call.at < Dopameet.CALL_TTL_MS);
+    (settings.meter === "call" && Date.now() - call.at < CALL_TTL_MS);
 
   const sync = () => {
     if (!settings.enabled) {
@@ -64,29 +75,26 @@
 
   engine.onSleep = sync;
 
-  Dopameet.settings.subscribe((next) => {
+  settingsStore.subscribe((next) => {
     settings = next;
-    const theme =
-      Dopameet.themes.get(next.theme) ?? Dopameet.themes.get("simple");
-    engine.setTheme(theme);
+    engine.setTheme(findTheme(next.theme));
     sync();
   });
 
-  Dopameet.call.subscribe((next) => {
+  callStore.subscribe((next) => {
     call = next;
     sync();
   });
 
-  Dopameet.mood.subscribe((next) => {
+  moodStore.subscribe((next) => {
     const now = Date.now();
+    const last = seen;
     const fresh =
-      seen === null
+      last === null
         ? []
-        : next.events.filter((event) => event.id > seen && now - event.at < FRESH_MS);
+        : next.events.filter((event) => event.id > last && now - event.at < FRESH_MS);
     const feverStarted =
-      rainbowUntil !== null &&
-      next.rainbowUntil !== rainbowUntil &&
-      next.rainbowUntil > now;
+      rainbowUntil !== null && next.rainbowUntil !== rainbowUntil && next.rainbowUntil > now;
     seen = next.seq;
     rainbowUntil = next.rainbowUntil;
     engine.setMood(next);
@@ -103,4 +111,6 @@
   });
 
   setInterval(sync, SYNC_MS);
-})();
+};
+
+if (window.top === window) start();
