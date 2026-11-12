@@ -2,35 +2,53 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>Dopagaki Meet</title>
+    <title>Dopameet</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <header>
-      <h1>Dopagaki Meet</h1>
+      <h1>Dopameet</h1>
       <label class="toggle">
         <input type="checkbox" id="enabled" />
-        <span>演出を出す</span>
+        <span>オン</span>
       </label>
     </header>
 
     <section>
-      <div class="meter"><div id="needle"></div></div>
-      <p id="status"></p>
+      <h2>テーマ</h2>
+      <div class="themes" id="themes"></div>
     </section>
 
-    <section class="buttons">
-      <button data-kind="good">👍 いいね</button>
-      <button data-kind="bad">👎 バッド</button>
-      <button id="rainbow">🌈 レインボー</button>
-      <button id="reset">リセット</button>
+    <section>
+      <h2>メモリ</h2>
+      <select id="meter">
+        <option value="call">Meet の通話中だけ表示</option>
+        <option value="always">常に表示</option>
+        <option value="off">表示しない</option>
+      </select>
+      <p class="note" id="call"></p>
     </section>
 
-    <p class="hint">
-      ボタンは動作確認用です。開いているほかのタブに演出が出ます。
-    </p>
+    <section>
+      <h2>いまのテンション</h2>
+      <div class="gauge"><div id="needle"></div></div>
+      <p class="note" id="status"></p>
+    </section>
+
+    <section>
+      <h2>テスト</h2>
+      <div class="reactions" id="reactions"></div>
+      <div class="actions">
+        <button id="rainbow">フィーバー</button>
+        <button id="reset">リセット</button>
+      </div>
+      <p class="note">ほかのタブに演出が出ます。</p>
+    </section>
 
     <script src="mood.js"></script>
+    <script src="themes/simple.js"></script>
+    <script src="themes/party.js"></script>
+    <script src="themes/halloween.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>
