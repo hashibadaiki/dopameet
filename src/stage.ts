@@ -1,7 +1,7 @@
 import { Engine } from "./engine";
 import { CALL_TTL_MS, defaultSettings, type Call, type Mood, type Settings } from "./mood";
 import css from "./overlay.css";
-import { findTheme } from "./themes";
+import { normal } from "./themes/normal";
 
 const SYNC_MS = 15_000;
 const FRESH_MS = 4_000;
@@ -37,11 +37,11 @@ export const createStage = (): Stage => {
   sheet.replaceSync(css);
   root.adoptedStyleSheets = [sheet];
   const engine = new Engine(root);
+  engine.setTheme(normal);
 
   let settings: Settings = defaultSettings();
   let call: Call = { at: 0 };
   let seen: number | null = null;
-  let rainbowUntil: number | null = null;
 
   const isOpen = () => host.isConnected && host.matches(":popover-open");
 
@@ -83,7 +83,6 @@ export const createStage = (): Stage => {
   return {
     setSettings(next) {
       settings = next;
-      engine.setTheme(findTheme(next.theme));
       sync();
     },
 
@@ -99,16 +98,12 @@ export const createStage = (): Stage => {
         last === null
           ? []
           : next.events.filter((event) => event.id > last && now - event.at < FRESH_MS);
-      const feverStarted =
-        rainbowUntil !== null && next.rainbowUntil !== rainbowUntil && next.rainbowUntil > now;
       seen = next.seq;
-      rainbowUntil = next.rainbowUntil;
       engine.setMood(next);
       if (!settings.enabled) return;
       engine.wake();
       sync();
       for (const event of fresh) engine.reaction(event);
-      if (feverStarted) engine.rainbowStart();
     },
   };
 };

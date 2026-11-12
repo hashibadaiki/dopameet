@@ -22,18 +22,7 @@ export interface View {
   down: number;
   fever: boolean;
   rainbow: number;
-  rainbowLeft: number;
-  comboCount: number;
   reduced: boolean;
-}
-
-export interface MeterCopy {
-  faces: string[];
-  fever: string;
-  feverName: string;
-  feverOn: string;
-  idle: string;
-  low: string;
 }
 
 export interface ThemeInstance {
@@ -45,9 +34,7 @@ export interface ThemeInstance {
 
 export interface Theme {
   id: string;
-  label: string;
-  description: string;
-  meter: MeterCopy;
+  tone(view: View): string;
   create(engine: Engine): ThemeInstance;
 }
 

@@ -4,15 +4,15 @@ import {
   classify,
   defaultSettings,
   initialMood,
+  isRainbow,
   react,
-  recentGood,
+  restart,
   scoreAt,
   setTuning,
   tuning,
   type MeterMode,
   type Tuning,
 } from "../mood";
-import { themes } from "../themes";
 import { BACKGROUNDS, READY, type Background, type PlayState } from "./protocol";
 
 const REACTIONS = ["💖", "👍", "🎉", "👏", "😂", "😮", "👎"];
@@ -29,12 +29,11 @@ interface Knob {
 }
 
 const KNOBS: Knob[] = [
-  { key: "halfLifeMs", label: "半減期", min: 3, max: 90, step: 1, seconds: true },
+  { key: "sinkPerSec", label: "通話中に 1 秒で下がる量", min: 0, max: 5, step: 0.1 },
+  { key: "halfLifeMs", label: "通話外で 0 に戻る半減期", min: 3, max: 90, step: 1, seconds: true },
   { key: "goodStep", label: "👍 1 回の加点", min: 1, max: 40, step: 1 },
   { key: "badStep", label: "👎 1 回の減点", min: 1, max: 50, step: 1 },
-  { key: "rainbowCount", label: "フィーバーに必要な回数", min: 2, max: 12, step: 1 },
-  { key: "rainbowWindowMs", label: "回数を数える時間", min: 2, max: 30, step: 1, seconds: true },
-  { key: "rainbowMs", label: "フィーバーの長さ", min: 2, max: 30, step: 1, seconds: true },
+  { key: "rainbowAt", label: "レインボーになるテンション", min: 60, max: 100, step: 1 },
 ];
 
 const byId = <T extends HTMLElement>(id: string, type: new () => T) => {
@@ -46,7 +45,6 @@ const byId = <T extends HTMLElement>(id: string, type: new () => T) => {
 const frame = byId("slide", HTMLIFrameElement);
 const enabled = byId("enabled", HTMLInputElement);
 const inCall = byId("in-call", HTMLInputElement);
-const themeList = byId("themes", HTMLFieldSetElement);
 const meter = byId("meter", HTMLSelectElement);
 const background = byId("background", HTMLSelectElement);
 const reactions = byId("reactions", HTMLDivElement);
@@ -56,7 +54,6 @@ const needle = byId("needle", HTMLDivElement);
 const status = byId("status", HTMLParagraphElement);
 
 interface Saved {
-  theme: string;
   meter: MeterMode;
   background: Background;
   inCall: boolean;
@@ -78,7 +75,6 @@ const state: PlayState = {
   settings: {
     ...defaultSettings(),
     meter: saved.meter ?? "always",
-    theme: saved.theme ?? defaultSettings().theme,
   },
   call: { at: 0 },
   mood: initialMood(),
@@ -88,7 +84,6 @@ const state: PlayState = {
 
 const save = () => {
   const value: Saved = {
-    theme: state.settings.theme,
     meter: state.settings.meter,
     background: state.background,
     inCall: inCall.checked,
@@ -123,24 +118,21 @@ const repeat = (emoji: string, times: number, gapMs: number) => {
   for (let i = 0; i < times; i++) setTimeout(() => fire(emoji), i * gapMs);
 };
 
-const fever = () => {
-  state.mood = { ...state.mood, rainbowUntil: Date.now() + tuning.rainbowMs };
-  send();
-};
-
 const jump = (score: number) => {
   state.mood = { ...state.mood, score, at: Date.now() };
   send();
 };
 
 const reset = () => {
-  state.mood = initialMood();
+  state.mood = restart(state.mood, inCall.checked, Date.now());
   send();
 };
 
 const describeRecovery = () => {
-  const seconds = (tuning.halfLifeMs / 1000) * Math.log2(10);
-  recovery.textContent = `±${LIMIT} から ±${LIMIT / 10} まで約 ${Math.round(seconds)} 秒`;
+  recovery.textContent =
+    tuning.sinkPerSec > 0
+      ? `通話中は何もしないと 0 から最低まで約 ${Math.round(LIMIT / tuning.sinkPerSec)} 秒`
+      : "通話中も下がらない";
 };
 
 const knobInputs = KNOBS.map((knob) => {
@@ -182,21 +174,6 @@ byId("tuning-reset", HTMLButtonElement).addEventListener("click", () => {
   send();
 });
 
-for (const theme of themes) {
-  const label = document.createElement("label");
-  const input = document.createElement("input");
-  input.type = "radio";
-  input.name = "theme";
-  input.value = theme.id;
-  input.checked = theme.id === state.settings.theme;
-  label.append(input, theme.label);
-  themeList.append(label);
-  input.addEventListener("change", () => {
-    state.settings = { ...state.settings, theme: theme.id };
-    send();
-  });
-}
-
 REACTIONS.forEach((emoji, index) => {
   const button = document.createElement("button");
   button.type = "button";
@@ -213,6 +190,7 @@ for (const [value, label] of Object.entries(BACKGROUNDS)) {
 meter.value = state.settings.meter;
 background.value = state.background;
 inCall.checked = saved.inCall ?? true;
+state.mood = restart(state.mood, inCall.checked, Date.now());
 
 enabled.addEventListener("change", () => {
   state.settings = { ...state.settings, enabled: enabled.checked };
@@ -234,19 +212,21 @@ const beat = () => {
   send();
 };
 
-inCall.addEventListener("change", beat);
+inCall.addEventListener("change", () => {
+  state.mood = restart(state.mood, inCall.checked, Date.now());
+  beat();
+});
 beat();
 setInterval(() => {
   if (inCall.checked) beat();
 }, HEARTBEAT_MS);
 
 byId("burst-good", HTMLButtonElement).addEventListener("click", () =>
-  repeat("👍", tuning.rainbowCount, 150),
+  repeat("👍", 6, 150),
 );
 byId("burst-bad", HTMLButtonElement).addEventListener("click", () => repeat("👎", 3, 300));
 byId("max", HTMLButtonElement).addEventListener("click", () => jump(LIMIT));
 byId("min", HTMLButtonElement).addEventListener("click", () => jump(-LIMIT));
-byId("fever", HTMLButtonElement).addEventListener("click", fever);
 byId("reset", HTMLButtonElement).addEventListener("click", reset);
 
 addEventListener("keydown", (event) => {
@@ -255,7 +235,6 @@ addEventListener("keydown", (event) => {
   if (event.target instanceof HTMLInputElement && event.target.type === "range") return;
   const emoji = REACTIONS[Number(event.key) - 1];
   if (emoji) fire(emoji);
-  else if (event.key === "f") fever();
   else if (event.key === "r") reset();
   else if (event.key === "ArrowUp") jump(LIMIT);
   else if (event.key === "ArrowDown") jump(-LIMIT);
@@ -266,14 +245,10 @@ addEventListener("keydown", (event) => {
 const render = () => {
   const now = Date.now();
   const score = scoreAt(state.mood, now);
-  const left = Math.max(0, state.mood.rainbowUntil - now);
-  const combo = recentGood(state.mood, now).length;
   needle.style.left = `${50 + (score / LIMIT) * 50}%`;
   status.textContent = [
     `テンション ${score.toFixed(1)}`,
-    left > 0
-      ? `フィーバー残り ${(left / 1000).toFixed(1)}s`
-      : `コンボ ${combo}/${tuning.rainbowCount}`,
+    isRainbow(score) ? "レインボー" : `レインボーまで ${(tuning.rainbowAt - score).toFixed(1)}`,
   ].join("　");
   requestAnimationFrame(render);
 };

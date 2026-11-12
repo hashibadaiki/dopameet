@@ -1,4 +1,4 @@
-import { callStore, classify, moodStore, react } from "./mood";
+import { callStore, classify, moodStore, react, restart } from "./mood";
 import type { ReactionKind } from "./types";
 
 const INTERACTIVE =
@@ -42,6 +42,13 @@ const inCall = () => /[a-z]{3}-[a-z]{4}-[a-z]{3}/.test(location.pathname);
 const beat = () => {
   if (inCall()) void callStore.update(() => ({ at: Date.now() }));
 };
+
+if (inCall()) void moodStore.update((mood) => restart(mood, true, Date.now()));
+else void moodStore.update((mood) => (mood.sinking ? restart(mood, false, Date.now()) : mood));
+
 beat();
 setInterval(beat, HEARTBEAT_MS);
-addEventListener("pagehide", () => void callStore.update(() => ({ at: 0 })));
+addEventListener("pagehide", () => {
+  void callStore.update(() => ({ at: 0 }));
+  if (inCall()) void moodStore.update((mood) => restart(mood, false, Date.now()));
+});

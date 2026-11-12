@@ -3,7 +3,7 @@ import { Meter } from "./meter";
 import {
   LIMIT,
   initialMood,
-  recentGood,
+  isRainbow,
   scoreAt,
   tuning,
   type Mood,
@@ -72,6 +72,7 @@ export class Engine {
   private time = 0;
   private last = 0;
   private filter = "";
+  private wasFever = false;
 
   constructor(root: ShadowRoot) {
     this.filterLayer.className = "filter";
@@ -168,12 +169,6 @@ export class Engine {
     this.state.onReaction?.(view, event);
   }
 
-  rainbowStart() {
-    if (!this.theme) return;
-    this.wake();
-    this.state.onRainbowStart?.(this.step(0));
-  }
-
   private resize() {
     const dpr = Math.min(devicePixelRatio || 1, 1.5);
     const w = innerWidth;
@@ -191,8 +186,9 @@ export class Engine {
 
   private step(dt: number): View {
     const now = Date.now();
-    const target = scoreAt(this.mood, now) / LIMIT;
-    const fever = now < this.mood.rainbowUntil;
+    const score = scoreAt(this.mood, now);
+    const target = score / LIMIT;
+    const fever = isRainbow(score);
     springTo(this.level, target, dt, 120, 14);
     springTo(this.rainbow, fever ? 1 : 0, dt, 40, 12.6);
     const level = Math.max(-1, Math.min(1, this.level.x));
@@ -209,8 +205,6 @@ export class Engine {
       down: Math.max(0, -level),
       fever,
       rainbow: clamp01(this.rainbow.x),
-      rainbowLeft: fever ? clamp01((this.mood.rainbowUntil - now) / tuning.rainbowMs) : 0,
-      comboCount: Math.min(tuning.rainbowCount - 1, recentGood(this.mood, now).length),
       reduced: this.reduced,
     };
   }
@@ -221,6 +215,8 @@ export class Engine {
     this.last = now;
     this.time += dt;
     const view = this.step(dt);
+    if (view.fever && !this.wasFever) this.state.onRainbowStart?.(view);
+    this.wasFever = view.fever;
     const { ctx } = this;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -240,6 +236,7 @@ export class Engine {
   private isIdle(view: View) {
     const still = (value: number) => Math.abs(value) < 0.003;
     return (
+      !this.mood.sinking &&
       this.particles.length === 0 &&
       this.flashes.length === 0 &&
       still(this.level.x) &&

@@ -42,41 +42,6 @@ section {
   gap: 4px;
 }
 
-.themes {
-  display: grid;
-  gap: 6px;
-}
-
-.theme {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 2px 8px;
-  align-items: center;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.theme:has(input:checked) {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-}
-
-.theme input {
-  grid-row: span 2;
-  margin: 0;
-  accent-color: var(--accent);
-}
-
-.theme strong {
-  font-size: 13px;
-}
-
-.theme small {
-  color: var(--muted);
-}
-
 select {
   width: 100%;
   padding: 5px;
