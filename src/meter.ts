@@ -1,4 +1,4 @@
-import { RAINBOW_COUNT } from "./mood";
+import { tuning } from "./mood";
 import type { ReactionEvent, Theme, View } from "./types";
 
 const make = <K extends keyof HTMLElementTagNameMap>(
@@ -19,7 +19,8 @@ export class Meter {
   private readonly down: HTMLDivElement;
   private readonly timer: HTMLDivElement;
   private readonly caption: HTMLDivElement;
-  private readonly pips: HTMLElement[];
+  private readonly pipRow: HTMLDivElement;
+  private pips: HTMLElement[] = [];
   private theme: Theme | null = null;
   private cache = new Map<string, string | number | boolean>();
   visible = false;
@@ -35,8 +36,7 @@ export class Meter {
     this.timer = make("div", "timer", body);
     const row = make("div", "row", body);
     this.caption = make("div", "caption", row);
-    const pips = make("div", "pips", row);
-    this.pips = Array.from({ length: RAINBOW_COUNT }, () => make("i", "", pips));
+    this.pipRow = make("div", "pips", row);
   }
 
   setTheme(theme: Theme) {
@@ -58,6 +58,11 @@ export class Meter {
     this.write("timer", view.rainbowLeft.toFixed(3), (v) => (this.timer.style.transform = `scaleX(${v})`));
     this.write("fever", view.fever, (v) => this.el.classList.toggle("fever", v));
     this.write("caption", this.captionFor(theme, view), (v) => (this.caption.textContent = v));
+    if (this.pips.length !== tuning.rainbowCount) {
+      this.pipRow.replaceChildren();
+      this.pips = Array.from({ length: tuning.rainbowCount }, () => make("i", "", this.pipRow));
+      this.cache.delete("pips");
+    }
     this.write("pips", view.comboCount, (count) =>
       this.pips.forEach((pip, i) => pip.classList.toggle("on", i < count)),
     );
@@ -104,7 +109,7 @@ export class Meter {
     const copy = theme.meter;
     if (view.fever) return copy.feverOn;
     if (view.comboCount > 0) {
-      return `あと ${RAINBOW_COUNT - view.comboCount} 回で${copy.feverName}`;
+      return `あと ${tuning.rainbowCount - view.comboCount} 回で${copy.feverName}`;
     }
     if (view.level < -0.4) return copy.low;
     return copy.idle;

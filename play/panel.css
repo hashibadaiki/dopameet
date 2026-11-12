@@ -94,6 +94,53 @@ select {
   font: inherit;
 }
 
+.tuning {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  padding: 10px 0;
+  border-block: 1px solid var(--line);
+}
+
+.knobs {
+  flex: 1 1 600px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 6px 24px;
+}
+
+.knobs label {
+  display: grid;
+  grid-template-columns: 11em 1fr 3.5em;
+  gap: 8px;
+}
+
+.knobs span {
+  color: var(--muted);
+}
+
+.knobs input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.knobs output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tuning-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recovery {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
 .gauge {
   position: relative;
   width: 240px;

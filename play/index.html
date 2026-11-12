@@ -14,6 +14,8 @@
         <div class="reactions" id="reactions"></div>
         <button type="button" id="burst-good" title="10 秒以内に 6 回でフィーバー">👍×6</button>
         <button type="button" id="burst-bad">👎×3</button>
+        <button type="button" id="max" title="キー ↑">最大</button>
+        <button type="button" id="min" title="キー ↓">最低</button>
         <button type="button" id="fever" title="キー f">フィーバー</button>
         <button type="button" id="reset" title="キー r">リセット</button>
       </div>
@@ -36,6 +38,14 @@
         </label>
         <label><input type="checkbox" id="in-call" /> 通話中</label>
         <label><input type="checkbox" id="enabled" checked /> オン</label>
+      </div>
+
+      <div class="tuning">
+        <div class="knobs" id="tuning"></div>
+        <div class="tuning-side">
+          <p class="recovery" id="recovery"></p>
+          <button type="button" id="tuning-reset">初期値に戻す</button>
+        </div>
       </div>
 
       <div class="row">

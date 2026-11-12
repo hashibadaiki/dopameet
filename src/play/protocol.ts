@@ -1,4 +1,4 @@
-import type { Call, Mood, Settings } from "../mood";
+import type { Call, Mood, Settings, Tuning } from "../mood";
 
 export const BACKGROUNDS = {
   slide: "スライド",
@@ -13,6 +13,7 @@ export interface PlayState {
   settings: Settings;
   call: Call;
   mood: Mood;
+  tuning: Tuning;
   background: Background;
 }
 
