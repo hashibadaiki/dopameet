@@ -8,20 +8,18 @@ const BAD = new Set(["👎"]);
 
 export interface Tuning {
   halfLifeMs: number;
+  sinkPerSec: number;
   goodStep: number;
   badStep: number;
-  rainbowCount: number;
-  rainbowWindowMs: number;
-  rainbowMs: number;
+  rainbowAt: number;
 }
 
 export const DEFAULT_TUNING: Readonly<Tuning> = {
   halfLifeMs: 25_000,
+  sinkPerSec: 1,
   goodStep: 8,
   badStep: 12,
-  rainbowCount: 6,
-  rainbowWindowMs: 10_000,
-  rainbowMs: 10_000,
+  rainbowAt: 85,
 };
 
 export const tuning: Tuning = { ...DEFAULT_TUNING };
@@ -33,8 +31,7 @@ export const setTuning = (next: Tuning) => {
 export interface Mood {
   score: number;
   at: number;
-  rainbowUntil: number;
-  goodTimes: number[];
+  sinking: boolean;
   events: ReactionEvent[];
   seq: number;
 }
@@ -43,7 +40,6 @@ export type MeterMode = "call" | "always" | "off";
 
 export interface Settings {
   enabled: boolean;
-  theme: string;
   meter: MeterMode;
 }
 
@@ -63,19 +59,34 @@ export const classify = (text: string): ReactionKind | null => {
 
 const clamp = (value: number) => Math.max(-LIMIT, Math.min(LIMIT, value));
 
-export const scoreAt = (mood: Mood, now: number) =>
-  mood.score * 0.5 ** (Math.max(0, now - mood.at) / tuning.halfLifeMs);
+export const scoreAt = (mood: Mood, now: number) => {
+  const elapsed = Math.max(0, now - mood.at);
+  if (mood.sinking) return clamp(mood.score - (tuning.sinkPerSec * elapsed) / 1000);
+  return mood.score * 0.5 ** (elapsed / tuning.halfLifeMs);
+};
 
-export const recentGood = (mood: Mood, now: number) =>
-  mood.goodTimes.filter((time) => now - time < tuning.rainbowWindowMs);
+export const isRainbow = (score: number) => score >= tuning.rainbowAt;
 
 export const initialMood = (): Mood => ({
   score: 0,
   at: 0,
-  rainbowUntil: 0,
-  goodTimes: [],
+  sinking: false,
   events: [],
   seq: 0,
+});
+
+export const restart = (mood: Mood, sinking: boolean, now: number): Mood => ({
+  ...initialMood(),
+  seq: mood.seq,
+  at: now,
+  sinking,
+});
+
+export const setSinking = (mood: Mood, sinking: boolean, now: number): Mood => ({
+  ...mood,
+  score: scoreAt(mood, now),
+  at: now,
+  sinking,
 });
 
 export const react = (
@@ -92,22 +103,11 @@ export const react = (
   if (kind === "bad") {
     return { ...mood, score: clamp(current - tuning.badStep), at: now, seq, events };
   }
-  const goodTimes = [...recentGood(mood, now), now];
-  const burst = goodTimes.length >= tuning.rainbowCount;
-  return {
-    ...mood,
-    score: clamp(current + tuning.goodStep),
-    at: now,
-    seq,
-    events,
-    goodTimes: burst ? [] : goodTimes,
-    rainbowUntil: burst ? now + tuning.rainbowMs : mood.rainbowUntil,
-  };
+  return { ...mood, score: clamp(current + tuning.goodStep), at: now, seq, events };
 };
 
 export const defaultSettings = (): Settings => ({
   enabled: true,
-  theme: "simple",
   meter: "call",
 });
 

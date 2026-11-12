@@ -4,16 +4,16 @@ import {
   callStore,
   classify,
   initialMood,
+  isRainbow,
   moodStore,
   react,
+  restart,
   scoreAt,
   settingsStore,
-  tuning,
   type Call,
   type MeterMode,
   type Mood,
 } from "./mood";
-import { themes } from "./themes";
 
 const REACTIONS = ["💖", "👍", "🎉", "👏", "😂", "😮", "👎"];
 
@@ -24,7 +24,6 @@ const byId = <T extends HTMLElement>(id: string, type: new () => T) => {
 };
 
 const enabled = byId("enabled", HTMLInputElement);
-const themeList = byId("themes", HTMLDivElement);
 const meter = byId("meter", HTMLSelectElement);
 const callNote = byId("call", HTMLParagraphElement);
 const needle = byId("needle", HTMLDivElement);
@@ -33,24 +32,6 @@ const reactions = byId("reactions", HTMLDivElement);
 
 let mood: Mood = initialMood();
 let call: Call = { at: 0 };
-
-for (const theme of themes) {
-  const label = document.createElement("label");
-  label.className = "theme";
-  const input = document.createElement("input");
-  input.type = "radio";
-  input.name = "theme";
-  input.value = theme.id;
-  const name = document.createElement("strong");
-  name.textContent = theme.label;
-  const description = document.createElement("small");
-  description.textContent = theme.description;
-  label.append(input, name, description);
-  themeList.append(label);
-  input.addEventListener("change", () =>
-    settingsStore.update((current) => ({ ...current, theme: theme.id })),
-  );
-}
 
 for (const emoji of REACTIONS) {
   const kind = classify(emoji);
@@ -66,9 +47,8 @@ for (const emoji of REACTIONS) {
 const render = () => {
   const now = Date.now();
   const score = scoreAt(mood, now);
-  const fever = now < mood.rainbowUntil;
   needle.style.left = `${50 + (score / LIMIT) * 50}%`;
-  status.textContent = `テンション ${Math.round(score)}${fever ? "　フィーバー中" : ""}`;
+  status.textContent = `テンション ${Math.round(score)}${isRainbow(score) ? "　レインボー" : ""}`;
   callNote.textContent =
     now - call.at < CALL_TTL_MS
       ? "Meet の通話を検出しています"
@@ -78,9 +58,6 @@ const render = () => {
 settingsStore.subscribe((settings) => {
   enabled.checked = settings.enabled;
   meter.value = settings.meter;
-  for (const input of themeList.querySelectorAll("input")) {
-    input.checked = input.value === settings.theme;
-  }
 });
 
 moodStore.subscribe((next) => {
@@ -103,10 +80,6 @@ meter.addEventListener("change", () =>
   settingsStore.update((current) => ({ ...current, meter: meter.value as MeterMode })),
 );
 
-byId("rainbow", HTMLButtonElement).addEventListener("click", () =>
-  moodStore.update((current) => ({ ...current, rainbowUntil: Date.now() + tuning.rainbowMs })),
-);
-
 byId("reset", HTMLButtonElement).addEventListener("click", () =>
-  moodStore.update(() => initialMood()),
+  moodStore.update((current) => restart(current, current.sinking, Date.now())),
 );
