@@ -1,16 +1,34 @@
 import type { ReactionEvent, ReactionKind } from "./types";
 
 export const LIMIT = 100;
-export const RAINBOW_COUNT = 6;
-export const RAINBOW_MS = 10_000;
 export const CALL_TTL_MS = 150_000;
-const HALF_LIFE_MS = 45_000;
-const GOOD_STEP = 8;
-const BAD_STEP = 12;
-const RAINBOW_WINDOW_MS = 10_000;
 const MAX_EVENTS = 12;
 const GOOD = new Set(["💖", "❤", "👍", "🎉", "👏", "😂", "😮"]);
 const BAD = new Set(["👎"]);
+
+export interface Tuning {
+  halfLifeMs: number;
+  goodStep: number;
+  badStep: number;
+  rainbowCount: number;
+  rainbowWindowMs: number;
+  rainbowMs: number;
+}
+
+export const DEFAULT_TUNING: Readonly<Tuning> = {
+  halfLifeMs: 25_000,
+  goodStep: 8,
+  badStep: 12,
+  rainbowCount: 6,
+  rainbowWindowMs: 10_000,
+  rainbowMs: 10_000,
+};
+
+export const tuning: Tuning = { ...DEFAULT_TUNING };
+
+export const setTuning = (next: Tuning) => {
+  Object.assign(tuning, next);
+};
 
 export interface Mood {
   score: number;
@@ -46,10 +64,10 @@ export const classify = (text: string): ReactionKind | null => {
 const clamp = (value: number) => Math.max(-LIMIT, Math.min(LIMIT, value));
 
 export const scoreAt = (mood: Mood, now: number) =>
-  mood.score * 0.5 ** (Math.max(0, now - mood.at) / HALF_LIFE_MS);
+  mood.score * 0.5 ** (Math.max(0, now - mood.at) / tuning.halfLifeMs);
 
 export const recentGood = (mood: Mood, now: number) =>
-  mood.goodTimes.filter((time) => now - time < RAINBOW_WINDOW_MS);
+  mood.goodTimes.filter((time) => now - time < tuning.rainbowWindowMs);
 
 export const initialMood = (): Mood => ({
   score: 0,
@@ -72,18 +90,18 @@ export const react = (
   );
   const current = scoreAt(mood, now);
   if (kind === "bad") {
-    return { ...mood, score: clamp(current - BAD_STEP), at: now, seq, events };
+    return { ...mood, score: clamp(current - tuning.badStep), at: now, seq, events };
   }
   const goodTimes = [...recentGood(mood, now), now];
-  const burst = goodTimes.length >= RAINBOW_COUNT;
+  const burst = goodTimes.length >= tuning.rainbowCount;
   return {
     ...mood,
-    score: clamp(current + GOOD_STEP),
+    score: clamp(current + tuning.goodStep),
     at: now,
     seq,
     events,
     goodTimes: burst ? [] : goodTimes,
-    rainbowUntil: burst ? now + RAINBOW_MS : mood.rainbowUntil,
+    rainbowUntil: burst ? now + tuning.rainbowMs : mood.rainbowUntil,
   };
 };
 

@@ -1,0 +1,167 @@
+:root {
+  color-scheme: light dark;
+  --line: color-mix(in srgb, canvastext 16%, transparent);
+  --muted: color-mix(in srgb, canvastext 60%, transparent);
+  --accent: #ff7a1a;
+  font: 13px / 1.4 system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  height: 100vh;
+  margin: 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  background: canvas;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.reactions {
+  display: flex;
+  gap: 4px;
+}
+
+.reactions button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 22px;
+}
+
+button {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+fieldset {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  float: left;
+  margin-right: 4px;
+  padding: 0;
+  color: var(--muted);
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+select {
+  font: inherit;
+}
+
+.tuning {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  padding: 10px 0;
+  border-block: 1px solid var(--line);
+}
+
+.knobs {
+  flex: 1 1 600px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 6px 24px;
+}
+
+.knobs label {
+  display: grid;
+  grid-template-columns: 11em 1fr 3.5em;
+  gap: 8px;
+}
+
+.knobs span {
+  color: var(--muted);
+}
+
+.knobs input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.knobs output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tuning-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recovery {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.gauge {
+  position: relative;
+  width: 240px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #3a4a6b, var(--line) 50%, var(--accent));
+}
+
+.needle {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 4px;
+  height: 16px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: canvastext;
+}
+
+.status {
+  margin: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

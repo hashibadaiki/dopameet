@@ -2,11 +2,10 @@ import { EMOJI_FONT, banner, clamp01, rand, rgba, vignette } from "./fx";
 import { Meter } from "./meter";
 import {
   LIMIT,
-  RAINBOW_COUNT,
-  RAINBOW_MS,
   initialMood,
   recentGood,
   scoreAt,
+  tuning,
   type Mood,
 } from "./mood";
 import type {
@@ -210,8 +209,8 @@ export class Engine {
       down: Math.max(0, -level),
       fever,
       rainbow: clamp01(this.rainbow.x),
-      rainbowLeft: fever ? clamp01((this.mood.rainbowUntil - now) / RAINBOW_MS) : 0,
-      comboCount: Math.min(RAINBOW_COUNT - 1, recentGood(this.mood, now).length),
+      rainbowLeft: fever ? clamp01((this.mood.rainbowUntil - now) / tuning.rainbowMs) : 0,
+      comboCount: Math.min(tuning.rainbowCount - 1, recentGood(this.mood, now).length),
       reduced: this.reduced,
     };
   }

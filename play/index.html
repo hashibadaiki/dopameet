@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dopameet Playground</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <iframe id="slide" src="slide.html" title="演出を重ねるページ"></iframe>
+
+    <form class="panel" onsubmit="return false">
+      <div class="row">
+        <div class="reactions" id="reactions"></div>
+        <button type="button" id="burst-good" title="10 秒以内に 6 回でフィーバー">👍×6</button>
+        <button type="button" id="burst-bad">👎×3</button>
+        <button type="button" id="max" title="キー ↑">最大</button>
+        <button type="button" id="min" title="キー ↓">最低</button>
+        <button type="button" id="fever" title="キー f">フィーバー</button>
+        <button type="button" id="reset" title="キー r">リセット</button>
+      </div>
+
+      <div class="row">
+        <fieldset class="themes" id="themes">
+          <legend>テーマ</legend>
+        </fieldset>
+        <label>
+          メーター
+          <select id="meter">
+            <option value="call">通話中だけ</option>
+            <option value="always">常に</option>
+            <option value="off">出さない</option>
+          </select>
+        </label>
+        <label>
+          背景
+          <select id="background"></select>
+        </label>
+        <label><input type="checkbox" id="in-call" /> 通話中</label>
+        <label><input type="checkbox" id="enabled" checked /> オン</label>
+      </div>
+
+      <div class="tuning">
+        <div class="knobs" id="tuning"></div>
+        <div class="tuning-side">
+          <p class="recovery" id="recovery"></p>
+          <button type="button" id="tuning-reset">初期値に戻す</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="gauge"><div class="needle" id="needle"></div></div>
+        <p class="status" id="status"></p>
+      </div>
+    </form>
+
+    <script src="assets/panel.js"></script>
+  </body>
+</html>

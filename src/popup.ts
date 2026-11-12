@@ -1,7 +1,6 @@
 import {
   CALL_TTL_MS,
   LIMIT,
-  RAINBOW_MS,
   callStore,
   classify,
   initialMood,
@@ -9,6 +8,7 @@ import {
   react,
   scoreAt,
   settingsStore,
+  tuning,
   type Call,
   type MeterMode,
   type Mood,
@@ -104,7 +104,7 @@ meter.addEventListener("change", () =>
 );
 
 byId("rainbow", HTMLButtonElement).addEventListener("click", () =>
-  moodStore.update((current) => ({ ...current, rainbowUntil: Date.now() + RAINBOW_MS })),
+  moodStore.update((current) => ({ ...current, rainbowUntil: Date.now() + tuning.rainbowMs })),
 );
 
 byId("reset", HTMLButtonElement).addEventListener("click", () =>
