@@ -1,8 +1,5 @@
 import type { Engine } from "./engine";
 
-export const EMOJI_FONT =
-  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-
 export const RAINBOW = [
   "#ff3b3b",
   "#ff9f1a",
@@ -163,24 +160,3 @@ export const confetti = (
     });
   }
 };
-
-export const rise = (
-  engine: Engine,
-  emoji: string,
-  options: { x?: number; y?: number; size?: number; life?: number } = {},
-) =>
-  engine.spawn({
-    kind: "emoji",
-    emoji,
-    x: options.x ?? rand(0.12, 0.88) * engine.w,
-    y: options.y ?? engine.h + 40,
-    vx: rand(-30, 30),
-    vy: rand(-300, -230),
-    drag: 0.5,
-    life: options.life ?? 2.4,
-    size: options.size ?? 64,
-    pop: true,
-    wobble: rand(0.8, 1.4),
-    sway: 60,
-    fadeOut: 0.9,
-  });
