@@ -57,30 +57,6 @@ export const conic = (ctx: Ctx, w: number, h: number, colors: string[], angle: n
   ctx.fillRect(0, 0, w, h);
 };
 
-export const ring = (
-  engine: Engine,
-  paint: (ctx: Ctx, w: number, h: number) => void,
-  inner: number,
-  alpha: number,
-) => {
-  const { sctx, scratch, ctx, w, h, dpr } = engine;
-  sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  sctx.globalCompositeOperation = "source-over";
-  sctx.clearRect(0, 0, w, h);
-  paint(sctx, w, h);
-  sctx.globalCompositeOperation = "destination-in";
-  vignette(sctx, w, h, [
-    [inner, "rgba(0, 0, 0, 0)"],
-    [1, "rgba(0, 0, 0, 1)"],
-  ]);
-  sctx.globalCompositeOperation = "source-over";
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalAlpha = clamp01(alpha);
-  ctx.drawImage(scratch, 0, 0);
-  ctx.restore();
-};
-
 export interface BannerOptions {
   x: number;
   y: number;
