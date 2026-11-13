@@ -11,6 +11,8 @@
 Dopameet は Google Meet のリアクションに合わせて、発表中の画面を盛り上げたり暗くしたりする Chrome 拡張です。
 「みんなちゃんとリアクションしよう！」がコンセプトで、リアクションが止まると画面が暗くなっていきます。
 
+[Chrome ウェブストアで入手する](https://chromewebstore.google.com/detail/dopameet/fcapgakabgoemhlagplplimeblphcbhe)
+
 - 通話に入るとテンション 0 から始まり、何も来なければ 1 秒に 1 ずつ下がり続けます。最低（-100）まで下がると END
 - 良いリアクション（💖👍🎉👏😂😮）1 回で +8、👎 1 回で -12
 - テンションが 85 以上のあいだはレインボー
@@ -47,6 +49,10 @@ Dopameet は Google Meet のリアクションに合わせて、発表中の画�
 「再開」を押すと、止めたときの値から続きが動きます。
 
 ## インストール
+
+[Chrome ウェブストア](https://chromewebstore.google.com/detail/dopameet/fcapgakabgoemhlagplplimeblphcbhe)から追加してください。
+
+### ソースから入れる
 
 ```sh
 pnpm install
