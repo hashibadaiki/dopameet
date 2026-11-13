@@ -81,14 +81,20 @@ callStore.subscribe((next) => {
 setInterval(render, 250);
 
 power.addEventListener("click", async () => {
-  const { enabled } = await settingsStore.read();
-  const now = Date.now();
-  if (enabled) {
-    await moodStore.update((current) => pause(current, now));
-    await settingsStore.update((current) => ({ ...current, enabled: false }));
-  } else {
-    await settingsStore.update((current) => ({ ...current, enabled: true }));
-    await moodStore.update((current) => resume(current, now));
+  if (power.disabled) return;
+  power.disabled = true;
+  try {
+    const { enabled } = await settingsStore.read();
+    const now = Date.now();
+    if (enabled) {
+      await moodStore.update((current) => pause(current, now));
+      await settingsStore.update((current) => ({ ...current, enabled: false }));
+    } else {
+      await settingsStore.update((current) => ({ ...current, enabled: true }));
+      await moodStore.update((current) => resume(current, now));
+    }
+  } finally {
+    power.disabled = false;
   }
 });
 
