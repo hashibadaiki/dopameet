@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Dopameet",
   "description": "Google Meet のリアクションに合わせて、発表中の画面を盛り上げたり暗くしたりします。",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "minimum_chrome_version": "114",
   "permissions": ["storage", "activeTab", "scripting"],
   "icons": {

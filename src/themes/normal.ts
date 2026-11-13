@@ -1,4 +1,4 @@
-import { banner, clamp01, edgePoint, rand, smooth, vignette } from "../fx";
+import { banner, clamp01, edgePoint, pick, rand, smooth, vignette } from "../fx";
 import type { Engine } from "../engine";
 import type { Particle, Theme, View } from "../types";
 
@@ -40,6 +40,13 @@ const hue = (deg: number): Rgb => {
     return (0.55 - 0.45 * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255;
   };
   return [f(0), f(8), f(4)];
+};
+
+const HUE_STEP = 15;
+const HUES = Array.from({ length: 360 / HUE_STEP }, (_, i) => hue(i * HUE_STEP));
+const snapHue = (deg: number) => {
+  const i = Math.round(deg / HUE_STEP) % HUES.length;
+  return HUES[(i + HUES.length) % HUES.length]!;
 };
 
 const around = (a: number, w: number, h: number, scale: number) => {
@@ -122,26 +129,24 @@ export const normal: Theme = {
     let smokeClock = 0;
     let shadeClock = 0;
 
-    const puffs = Array.from({ length: VARIANTS }, puff);
+    let puffs = Array.from({ length: VARIANTS }, puff);
     const tints = new Map<string, HTMLCanvasElement>();
 
     const tinted = (rgb: Rgb, variant: number, glow: number) => {
-      const q = rgb.map((c) => Math.round(c / 12) * 12) as unknown as Rgb;
-      const key = `${q.join(",")}|${variant}|${glow}`;
+      const key = `${hex(rgb)}|${variant}|${glow}`;
       const cached = tints.get(key);
       if (cached) return cached;
       const { canvas, ctx } = canvas2d(SPRITE);
       const source = puffs[variant]!;
       ctx.drawImage(source, 0, 0);
       ctx.globalCompositeOperation = "source-in";
-      ctx.fillStyle = hex(q);
+      ctx.fillStyle = hex(rgb);
       ctx.fillRect(0, 0, SPRITE, SPRITE);
       if (glow > 0) {
         ctx.globalCompositeOperation = "lighter";
         ctx.globalAlpha = glow;
         ctx.drawImage(source, 0, 0);
       }
-      if (tints.size > 240) tints.clear();
       tints.set(key, canvas);
       return canvas;
     };
@@ -177,19 +182,29 @@ export const normal: Theme = {
         vx: -nx * inward - ny * swirl,
         vy: -ny * inward + nx * swirl,
         drag: 0.35,
-        size: Math.min(v.w, v.h) * rand(0.26, 0.44),
+        size: Math.min(v.w, v.h) * rand(0.22, 0.36),
         rot: rand(0, TAU),
         vr: rand(-0.5, 0.5),
         life: options.life ?? rand(2.2, 3.4),
         fadeIn: 0.6,
         fadeOut: 1.2,
+        haze: true,
         draw: (ctx: CanvasRenderingContext2D, p: Particle, alpha: number, view: View) => {
-          const tone = options.tone ?? mix(color, hue(shift + view.t * 120), view.rainbow);
-          const strength = options.tone ? 1 : Math.max(heat, 0.25);
+          const size = p.size * (1 + p.age * 0.2);
+          const layer = (rgb: Rgb, weight: number) => {
+            ctx.globalAlpha = clamp01(weight);
+            drawPuff(ctx, tinted(rgb, variant, 0.35), p.x, p.y, size, p.rot);
+          };
           ctx.save();
           ctx.globalCompositeOperation = "lighter";
-          ctx.globalAlpha = clamp01(alpha * 0.6 * strength);
-          drawPuff(ctx, tinted(tone, variant, 0.35), p.x, p.y, p.size * (1 + p.age * 0.35), p.rot);
+          if (options.tone) {
+            layer(options.tone, alpha * 0.8);
+          } else {
+            const base = alpha * 0.8 * Math.max(heat, 0.25);
+            const r = view.rainbow;
+            if (r < 0.99) layer(color, base * (1 - r));
+            if (r > 0.01) layer(snapHue(shift + view.t * 120), base * r);
+          }
           ctx.restore();
         },
       });
@@ -200,7 +215,7 @@ export const normal: Theme = {
         const p = edgePoint(v.w, v.h);
         engine.spawn({
           kind: "spark",
-          color: hex(mix(rgb, WHITE, rand(0, 0.5))),
+          color: hex(mix(rgb, WHITE, pick([0, 0.25, 0.5]))),
           x: p.x,
           y: p.y,
           vx: p.nx * rand(200, 600) + rand(-120, 120),
@@ -280,6 +295,7 @@ export const normal: Theme = {
         life: rand(3.5, 5.5),
         fadeIn: 1.4,
         fadeOut: 1.8,
+        haze: true,
         draw: (ctx: CanvasRenderingContext2D, q: Particle, alpha: number, view: View) => {
           ctx.save();
           ctx.globalAlpha = clamp01(alpha * 0.5 * view.down ** 0.7);
@@ -297,7 +313,7 @@ export const normal: Theme = {
       const depth = Math.min(w, h) * (0.06 + 0.6 * down ** 1.3);
       edges(v, depth, clamp01(0.85 * down ** 0.9));
 
-      shadeClock += v.dt * smooth(0, 0.15, down) * (v.reduced ? 4 : 10);
+      shadeClock += v.dt * smooth(0, 0.15, down) * (v.reduced ? 3 : 6);
       while (shadeClock > 1) {
         shadeClock -= 1;
         shade(v, depth);
@@ -314,8 +330,11 @@ export const normal: Theme = {
     };
 
     return {
-      filter: (v) =>
-        `saturate(${(1 + v.up * 0.3 + v.rainbow * 0.25 - v.down ** 1.5 * 0.85).toFixed(2)}) brightness(${(1 + v.up * 0.05 - v.down ** 1.5 * 0.15).toFixed(2)})`,
+      filter: (v) => {
+        const gloom = Math.round(v.down ** 1.5 * 20) / 20;
+        if (gloom === 0) return "";
+        return `saturate(${(1 - gloom * 0.85).toFixed(2)}) brightness(${(1 - gloom * 0.15).toFixed(2)})`;
+      },
 
       frame(v) {
         const next = stageOf(v.target);
@@ -324,7 +343,7 @@ export const normal: Theme = {
           engine.flash(hex(reached), 0.7, { edge: true, decay: 2.2 });
           engine.flash("#ffffff", 0.15, { decay: 6 });
           sparks(v, reached, 30);
-          gust(v, 14);
+          gust(v, 8);
         }
         if (next >= 0) color = STAGES[next]!.color;
         stage = next;
@@ -335,7 +354,7 @@ export const normal: Theme = {
             [0.7, "rgba(0, 0, 0, 0)"],
             [1.15, `rgba(${mix(color, hue(v.t * 90), v.rainbow).map(Math.round).join(", ")}, ${0.3 * heat})`],
           ]);
-          smokeClock += v.dt * heat * (v.reduced ? 6 : 22);
+          smokeClock += v.dt * heat * (v.reduced ? 5 : 18);
           while (smokeClock > 1) {
             smokeClock -= 1;
             smoke(v);
@@ -352,9 +371,14 @@ export const normal: Theme = {
         engine.flash("#1a0010", 0.6, { edge: true, decay: 2.5 });
       },
 
+      onRestore() {
+        puffs = Array.from({ length: VARIANTS }, puff);
+        tints.clear();
+      },
+
       onRainbowStart(v) {
         engine.flash("#ffffff", 0.4, { decay: 4 });
-        for (let i = 0; i < 6; i++) gust(v, 5, hue(i * 60));
+        for (let i = 0; i < 6; i++) gust(v, 3, hue(i * 60));
         sparks(v, WHITE, 50);
       },
     };

@@ -18,6 +18,8 @@ import type {
 } from "./types";
 
 const MAX_PARTICLES = 700;
+const FRAME_MS = 1000 / 30;
+const HAZE_SCALE = 0.5;
 
 interface Spring {
   x: number;
@@ -50,8 +52,8 @@ const context2d = (canvas: HTMLCanvasElement) => {
 export class Engine {
   readonly canvas = document.createElement("canvas");
   readonly ctx = context2d(this.canvas);
-  readonly scratch = document.createElement("canvas");
-  readonly sctx = context2d(this.scratch);
+  readonly haze = document.createElement("canvas");
+  readonly hctx = context2d(this.haze);
   readonly meter: Meter;
   readonly reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   w = 0;
@@ -73,12 +75,19 @@ export class Engine {
   private last = 0;
   private filter = "";
   private wasFever = false;
+  private frameId = 0;
 
   constructor(root: ShadowRoot) {
     this.filterLayer.className = "filter";
-    root.append(this.filterLayer, this.canvas);
+    root.append(this.filterLayer, this.haze, this.canvas);
     this.meter = new Meter(root);
     addEventListener("resize", () => this.resize());
+    for (const canvas of [this.canvas, this.haze]) {
+      canvas.addEventListener("contextrestored", () => {
+        this.sprites.clear();
+        this.state.onRestore?.();
+      });
+    }
   }
 
   setTheme(theme: Theme) {
@@ -136,7 +145,7 @@ export class Engine {
     this.running = true;
     this.resize();
     this.last = performance.now();
-    requestAnimationFrame(this.tick);
+    this.frameId = requestAnimationFrame(this.tick);
   }
 
   stop() {
@@ -154,17 +163,17 @@ export class Engine {
   }
 
   private resize() {
-    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    const dpr = Math.min(devicePixelRatio || 1, 1);
     const w = innerWidth;
     const h = innerHeight;
     if (w === this.w && h === this.h && dpr === this.dpr) return;
     this.w = w;
     this.h = h;
     this.dpr = dpr;
-    for (const canvas of [this.canvas, this.scratch]) {
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
-    }
+    this.canvas.width = Math.round(w * dpr);
+    this.canvas.height = Math.round(h * dpr);
+    this.haze.width = Math.round(w * dpr * HAZE_SCALE);
+    this.haze.height = Math.round(h * dpr * HAZE_SCALE);
     this.sprites.clear();
   }
 
@@ -195,16 +204,20 @@ export class Engine {
 
   private readonly tick = (now: number) => {
     if (!this.running) return;
+    if (now - this.last < FRAME_MS - 2) {
+      this.frameId = requestAnimationFrame(this.tick);
+      return;
+    }
     const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000));
     this.last = now;
     this.time += dt;
     const view = this.step(dt);
     if (view.fever && !this.wasFever) this.state.onRainbowStart?.(view);
     this.wasFever = view.fever;
-    const { ctx } = this;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.clear();
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    const haze = this.dpr * HAZE_SCALE;
+    this.hctx.setTransform(haze, 0, 0, haze, 0, 0);
     this.state.frame?.(view);
     this.drawParticles(view);
     this.drawFlashes(view);
@@ -214,7 +227,7 @@ export class Engine {
       this.sleep();
       return;
     }
-    requestAnimationFrame(this.tick);
+    this.frameId = requestAnimationFrame(this.tick);
   };
 
   private isIdle(view: View) {
@@ -233,10 +246,17 @@ export class Engine {
 
   private sleep() {
     this.running = false;
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    cancelAnimationFrame(this.frameId);
+    this.clear();
     this.applyFilter("");
     this.onSleep();
+  }
+
+  private clear() {
+    for (const ctx of [this.ctx, this.hctx]) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
   }
 
   private applyFilter(value: string) {
@@ -286,7 +306,7 @@ export class Engine {
 
   private drawParticle(ctx: CanvasRenderingContext2D, p: Particle, alpha: number, view: View) {
     if (p.kind === "custom") {
-      p.draw?.(ctx, p, alpha, view);
+      p.draw?.(p.haze ? this.hctx : ctx, p, alpha, view);
       return;
     }
     const pop = p.pop && p.age < 0.4 ? easeOutBack(p.age / 0.4) : 1;

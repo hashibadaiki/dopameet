@@ -30,6 +30,7 @@ export interface ThemeInstance {
   frame?(view: View): void;
   onReaction?(view: View, event: ReactionEvent): void;
   onRainbowStart?(view: View): void;
+  onRestore?(): void;
 }
 
 export interface Theme {
@@ -66,6 +67,7 @@ export interface Particle {
   spin?: number;
   text?: string;
   stroke?: string;
+  haze?: boolean;
   tick?: (p: Particle, dt: number, view: View) => void;
   draw?: (ctx: CanvasRenderingContext2D, p: Particle, alpha: number, view: View) => void;
 }
