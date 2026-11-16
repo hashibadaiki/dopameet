@@ -113,9 +113,9 @@ flowchart LR
   end
 
   subgraph Storage["chrome.storage.local"]
-    mood[("mood<br/>テンションとリアクション履歴")]
-    call[("call<br/>通話中のハートビート")]
-    settings[("settings<br/>オン/オフ・メモリ表示")]
+    moodStore[("mood<br/>テンションとリアクション履歴")]
+    callStore[("call<br/>通話中のハートビート")]
+    settingsStore[("settings<br/>オン/オフ・メモリ表示")]
   end
 
   subgraph Popup["ポップアップ"]
@@ -129,14 +129,14 @@ flowchart LR
     OV --> ST --> EN
   end
 
-  MO -- "絵文字を good / bad に分けてテンションを更新" --> mood
-  MO -- "20 秒ごとに書き込む" --> call
+  MO -- "絵文字を good / bad に分けてテンションを更新" --> moodStore
+  MO -- "20 秒ごとに書き込む" --> callStore
   P -- "「このタブに演出を出す」<br/>chrome.scripting で注入" --> OV
-  P -- "停止 / 再開" --> settings
-  P -- "リセット" --> mood
-  mood -- "onChanged" --> ST
-  call -- "onChanged" --> ST
-  settings -- "onChanged" --> ST
+  P -- "停止 / 再開" --> settingsStore
+  P -- "リセット" --> moodStore
+  moodStore -- "onChanged" --> ST
+  callStore -- "onChanged" --> ST
+  settingsStore -- "onChanged" --> ST
 ```
 
 リアクションが届いてから演出が出るまでの流れです。
