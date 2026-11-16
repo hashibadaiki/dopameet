@@ -2,6 +2,7 @@
   "name": "dopameet",
   "version": "0.2.1",
   "private": true,
+  "license": "MIT OR Apache-2.0",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.ts",

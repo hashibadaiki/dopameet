@@ -128,3 +128,11 @@ Chrome Web Store への提出手順と掲載文は [`store/README.md`](store/REA
 - 検知したリアクションは、Meet のタブの DevTools コンソールに `[dopameet] reaction` として出ます
 - Chrome の外のアプリ（Keynote など）には演出を出せません
 - OS で「視差効果を減らす」をオンにしていると、演出の量を減らします
+
+## ライセンス
+
+**MIT または Apache License 2.0** のデュアルライセンスです。好きな方を選んで使えます
+（[LICENSE-MIT](LICENSE-MIT) / [LICENSE-APACHE](LICENSE-APACHE)）。
+
+ただし「Dopameet」の名前とアイコン（`assets/icon.svg`、`public/icons/`）は対象外です。
+フォークして配布する場合は、別の名前とアイコンを付けてください。
