@@ -100,6 +100,66 @@ Chrome Web Store への提出手順と掲載文は [`store/README.md`](store/REA
 ポップアップの「このタブに演出を出す」を押してからテスト用ボタンを押すと、Meet に入らなくても演出を確かめられます。
 `http` / `https` のページにだけ演出を出せます。Meet のタブにも出せません。`file://` のページや Chrome の PDF 表示には出ません。
 
+## 仕組み
+
+Meet のタブと、演出を出す共有タブは別のタブです。2 つのタブは `chrome.storage.local` を介してテンションをやり取りしています。
+
+```mermaid
+flowchart LR
+  subgraph MeetTab["Meet のタブ"]
+    DOM["Meet の画面<br/>（リアクションの絵文字が流れる）"]
+    MO["meet.js<br/>MutationObserver"]
+    DOM -- "追加された要素" --> MO
+  end
+
+  subgraph Storage["chrome.storage.local"]
+    mood[("mood<br/>テンションとリアクション履歴")]
+    call[("call<br/>通話中のハートビート")]
+    settings[("settings<br/>オン/オフ・メモリ表示")]
+  end
+
+  subgraph Popup["ポップアップ"]
+    P["popup.js"]
+  end
+
+  subgraph SlideTab["共有するタブ（スライドなど）"]
+    OV["overlay.js"]
+    ST["Stage<br/>popover + Shadow DOM"]
+    EN["Engine<br/>canvas で煙や紙吹雪<br/>backdrop-filter で暗く"]
+    OV --> ST --> EN
+  end
+
+  MO -- "絵文字を good / bad に分けてテンションを更新" --> mood
+  MO -- "20 秒ごとに書き込む" --> call
+  P -- "「このタブに演出を出す」<br/>chrome.scripting で注入" --> OV
+  P -- "停止 / 再開" --> settings
+  P -- "リセット" --> mood
+  mood -- "onChanged" --> ST
+  call -- "onChanged" --> ST
+  settings -- "onChanged" --> ST
+```
+
+リアクションが届いてから演出が出るまでの流れです。
+
+```mermaid
+sequenceDiagram
+  participant Meet as Meet の画面
+  participant CS as meet.js
+  participant S as chrome.storage
+  participant Stage as overlay（共有タブ）
+  participant Eng as Engine
+
+  Meet->>CS: リアクションの要素が DOM に追加される
+  CS->>CS: img の alt / src から絵文字を取り出す
+  CS->>CS: 💖👍🎉👏😂😮 は good、👎 は bad
+  CS->>S: mood を更新（good なら +8、bad なら -12）
+  S-->>Stage: storage.onChanged
+  Stage->>Stage: 新しく増えたリアクションだけを拾う（4 秒以内）
+  Stage->>Eng: setMood / reaction
+  Eng->>Eng: requestAnimationFrame で描画
+  Note over Eng: テンション 85 以上でレインボー<br/>下がると画面が暗くなる
+```
+
 ## 構成
 
 | ファイル | 役割 |
